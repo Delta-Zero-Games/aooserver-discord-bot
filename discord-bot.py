@@ -166,17 +166,11 @@ class AooMonitor:
             # Track latest state of each group
             for line in result.stdout.split('\n'):
                 # Parse different event types
-                # Format: timestamp,id,id2,EventType,param1,param2...
+                # Format: timestamp,id,id2,EventType  param1  param2...
                 
-                if ',GroupAdd,' in line or ',GroupUpdate,' in line:
-                    match = re.search(r',Group(?:Add|Update),([^,]+)', line)
-                    if match:
-                        group_name = match.group(1)
-                        if group_name not in groups:
-                            groups[group_name] = []
-                
-                elif ',UserJoin,' in line:
-                    match = re.search(r',UserJoin,([^,]+),([^,\s]+)', line)
+                # Handle GroupJoin events: GroupJoin,groupname,username
+                if ',GroupJoin,' in line:
+                    match = re.search(r',GroupJoin,([^,]+),([^,\s]+)', line)
                     if match:
                         group_name = match.group(1)
                         user_name = match.group(2)
@@ -185,20 +179,36 @@ class AooMonitor:
                         if user_name not in groups[group_name]:
                             groups[group_name].append(user_name)
                 
-                elif ',UserLeave,' in line:
-                    match = re.search(r',UserLeave,([^,]+),([^,\s]+)', line)
+                # Handle GroupLeave events: GroupLeave,groupname,username
+                elif ',GroupLeave,' in line:
+                    match = re.search(r',GroupLeave,([^,]+),([^,\s]+)', line)
                     if match:
                         group_name = match.group(1)
                         user_name = match.group(2)
                         if group_name in groups and user_name in groups[group_name]:
                             groups[group_name].remove(user_name)
-                
-                elif ',GroupRemove,' in line:
-                    match = re.search(r',GroupRemove,([^,]+)', line)
-                    if match:
-                        group_name = match.group(1)
-                        if group_name in groups:
+                        # Remove empty groups
+                        if group_name in groups and len(groups[group_name]) == 0:
                             del groups[group_name]
+                
+                # Handle UserJoin events (creates user but no group assignment yet)
+                elif ',UserJoin,' in line:
+                    # UserJoin events are followed by GroupJoin, so we can ignore these
+                    # as GroupJoin will handle the user-to-group assignment
+                    pass
+                
+                # Handle UserLeave events (user disconnects entirely)
+                elif ',UserLeave,' in line:
+                    match = re.search(r',UserLeave,([^,\s]+)', line)
+                    if match:
+                        user_name = match.group(1)
+                        # Remove user from all groups
+                        for group_name in list(groups.keys()):
+                            if user_name in groups[group_name]:
+                                groups[group_name].remove(user_name)
+                            # Remove empty groups
+                            if len(groups[group_name]) == 0:
+                                del groups[group_name]
         
         except Exception as e:
             logger.error(f"Error parsing logs: {e}")
