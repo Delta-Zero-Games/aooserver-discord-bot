@@ -11,7 +11,7 @@ if [ -d "aooserver-discord-bot" ]; then
     git pull
 else
     echo "📦 Cloning repository..."
-    git clone https://github.com/YOUR_USERNAME/aooserver-discord-bot.git
+    git clone https://github.com/Delta-Zero-Games/aooserver-discord-bot.git
     cd aooserver-discord-bot
 fi
 
