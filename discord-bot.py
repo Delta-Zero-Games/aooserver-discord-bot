@@ -382,7 +382,7 @@ async def show_groups(ctx):
                 user_list += f" (+{user_count - 5} more)"
             
             embed.add_field(
-                name=f"🎸 {group_name}",
+                name=f"👥 {group_name}",
                 value=f"**{user_count} user{'s' if user_count != 1 else ''}**\n{user_list if users else 'Empty'}",
                 inline=True
             )
